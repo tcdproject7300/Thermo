@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Thermography to Excel</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 25px;
+}
+button {
+    background: #1685c5;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<h2>Infrared Thermography Report</h2>
+<p>Honda Ramkhamhaeng</p>
+
+<button onclick="exportExcel()">Download Excel</button>
+
+<script>
+function exportExcel() {
+
+const wb = XLSX.utils.book_new();
+
+// Sheet 1: General Information
+const info = [
+["Infrared Thermography Report for Honda Ramkhamhaeng"],
+["Thermal Image No.1"],
+[],
+["Location (Floor/Room)", "Devices", "Detail"],
+["ทางเข้าโครงการ", "Drop Out Fuse", "From MEA"],
+[],
+["IR Information", "Value"],
+["Date of Creation", "24-Jun-26"],
+[],
+["Object Information", "Value"],
+["Emissivity", 0.65],
+["Ambient Temp (°C)", 34.0],
+[],
+["Position", "Temperature (°C)"],
+["P1", 47.4],
+["P2", 47.1],
+["P3", 47.6]
+];
+
+const ws1 = XLSX.utils.aoa_to_sheet(info);
+ws1["!cols"] = [
+{wch:32},{wch:25},{wch:25}
+];
+XLSX.utils.book_append_sheet(wb, ws1, "IR Information");
+
+// Sheet 2: Temperature Difference
+const temp = [
+["Thermographic Survey Suggested Actions Based on Temperature Rise"],
+[],
+["Temperature Difference Between Similar Components under Similar Loading"],
+["Position", "Temp (°C)", "Normal", "Abnormal", "Recommended Action"],
+["P1 - P2", 0.3, "✓", "", "Normal"],
+["P2 - P3", 0.5, "✓", "", "Normal"],
+["P3 - P1", 0.2, "✓", "", "Normal"],
+[],
+["Temperature Difference Between Component and Ambient Air Temperature"],
+["Position", "Temp (°C)", "Normal", "Abnormal", "Recommended Action"],
+["P1 - Amb.", 13.4, "✓", "", "Indicates probable deficiency; repairs as time permits"],
+["P2 - Amb.", 13.1, "✓", "", "Indicates probable deficiency; repairs as time permits"],
+["P3 - Amb.", 13.6, "✓", "", "Indicates probable deficiency; repairs as time permits"]
+];
+
+const ws2 = XLSX.utils.aoa_to_sheet(temp);
+ws2["!cols"] = [
+{wch:20},{wch:15},{wch:12},{wch:12},{wch:65}
+];
+XLSX.utils.book_append_sheet(wb, ws2, "Temperature Analysis");
+
+// Export Excel
+XLSX.writeFile(
+    wb,
+    "Thermography_Honda_Ramkhamhaeng.xlsx"
+);
+}
+</script>
+
+</body>
+</html>
