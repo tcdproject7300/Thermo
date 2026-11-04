@@ -1,41 +1,425 @@
 
-const wb = new ExcelJS.Workbook();
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thermography Report to Excel</title>
 
-// ลบ Worksheet ทั้งหมดที่มีอยู่
-wb.worksheets.forEach(sheet => {
-    wb.removeWorksheet(sheet.id);
-});
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 
-// สร้างเพียง 1 Worksheet เท่านั้น
-const ws = wb.addWorksheet("Thermography Report");
-
-// รวมข้อมูลทุกส่วนไว้ใน ws ตัวเดียว
-// ห้ามใช้ wb.addWorksheet() อีกในส่วนอื่น
-
-ws.columns = [
-    { width: 22 },
-    { width: 16 },
-    { width: 14 },
-    { width: 14 },
-    { width: 40 }
-];
-
-// ตั้งค่ากระดาษ A4 หน้าเดียว
-ws.pageSetup = {
-    paperSize: 9,
-    orientation: "portrait",
-    fitToPage: true,
-    fitToWidth: 1,
-    fitToHeight: 1
-};
-
-// กำหนดพื้นที่พิมพ์ใน Sheet เดียว
-ws.pageSetup.printArea = "A1:E35";
-
-// ตรวจสอบว่ามีเพียง 1 Sheet
-console.log("จำนวน Sheet:", wb.worksheets.length);
-
-// ต้องได้ 1 เท่านั้น
-if (wb.worksheets.length !== 1) {
-    throw new Error("พบ Worksheet มากกว่า 1 Sheet");
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 25px;
+    background: #f5f5f5;
 }
+.container {
+    max-width: 650px;
+    margin: auto;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+}
+button {
+    background: #1685c5;
+    color: white;
+    border: none;
+    padding: 13px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+button:hover { background: #08669d; }
+#status { margin-top: 15px; }
+</style>
+</head>
+
+<body>
+<div class="container">
+    <h2>Infrared Thermography Report</h2>
+    <p>Honda Ramkhamhaeng</p>
+    <p>สร้าง Excel โดยรวมข้อมูลทั้งหมดไว้ใน Sheet เดียว</p>
+    <button onclick="exportExcel()">Download Excel</button>
+    <p id="status"></p>
+</div>
+
+<script>
+
+async function exportExcel() {
+
+try {
+
+    if (typeof ExcelJS === "undefined") {
+        throw new Error("ไม่สามารถโหลด ExcelJS ได้ กรุณาตรวจสอบ Internet");
+    }
+
+    const wb = new ExcelJS.Workbook();
+
+    // สร้างเพียง Sheet เดียว
+    const ws = wb.addWorksheet("Thermography Report");
+
+    // --------------------------------
+    // PAGE SETUP
+    // --------------------------------
+
+    ws.columns = [
+        { width: 23 },
+        { width: 15 },
+        { width: 13 },
+        { width: 13 },
+        { width: 40 }
+    ];
+
+    ws.pageSetup = {
+        paperSize: 9,
+        orientation: "portrait",
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 1,
+        margins: {
+            left: 0.25,
+            right: 0.25,
+            top: 0.3,
+            bottom: 0.3,
+            header: 0.1,
+            footer: 0.1
+        },
+        horizontalDpi: 300,
+        verticalDpi: 300
+    };
+
+    ws.pageSetup.printArea = "A1:E34";
+
+    ws.views = [{
+        state: "normal",
+        showGridLines: false
+    }];
+
+    // --------------------------------
+    // STYLE FUNCTIONS
+    // --------------------------------
+
+    function border(cell) {
+        cell.border = {
+            top: { style: "thin", color: { argb: "FF000000" }},
+            bottom: { style: "thin", color: { argb: "FF000000" }},
+            left: { style: "thin", color: { argb: "FF000000" }},
+            right: { style: "thin", color: { argb: "FF000000" }}
+        };
+    }
+
+    function fill(cell, color) {
+        cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF" + color }
+        };
+    }
+
+    function center(cell) {
+        cell.alignment = {
+            horizontal: "center",
+            vertical: "middle",
+            wrapText: true
+        };
+    }
+
+    function styleRange(row, start, end, color) {
+        for (let c = start; c <= end; c++) {
+            const cell = ws.getCell(row, c);
+            border(cell);
+            center(cell);
+            if (color) fill(cell, color);
+        }
+    }
+
+    function mergedTitle(row, text) {
+        ws.mergeCells(row, 1, row, 5);
+        const cell = ws.getCell(row, 1);
+        cell.value = text;
+        center(cell);
+        cell.font = { name: "Arial", size: 10, bold: true };
+    }
+
+    // --------------------------------
+    // HEADER
+    // --------------------------------
+
+    mergedTitle(1,
+        "Infrared Thermography Report for Honda Ramkhamhaeng"
+    );
+
+    ws.getCell("A1").alignment = {
+        horizontal: "left",
+        vertical: "middle"
+    };
+
+    ws.getCell("A1").font = {
+        name: "Arial",
+        size: 12,
+        bold: true
+    };
+
+    ws.getRow(1).height = 27;
+
+    mergedTitle(2, "Thermal Image No.1");
+    ws.getCell("A2").alignment = {
+        horizontal: "left",
+        vertical: "middle"
+    };
+
+    // --------------------------------
+    // IMAGE AREA
+    // --------------------------------
+
+    ws.mergeCells("A3:B3");
+    ws.mergeCells("D3:E3");
+
+    ws.getCell("A3").value = "Thermal Image";
+    ws.getCell("D3").value = "Visible Image";
+
+    center(ws.getCell("A3"));
+    center(ws.getCell("D3"));
+
+    // Image placeholders
+    ws.mergeCells("A4:B8");
+    ws.mergeCells("D4:E8");
+
+    ws.getCell("A4").value = "Thermal Image";
+    ws.getCell("D4").value = "Visible Image";
+
+    center(ws.getCell("A4"));
+    center(ws.getCell("D4"));
+
+    ws.getCell("A4").font = { color: { argb: "FF888888" }};
+    ws.getCell("D4").font = { color: { argb: "FF888888" }};
+
+    ws.getRow(4).height = 25;
+    ws.getRow(5).height = 25;
+    ws.getRow(6).height = 25;
+    ws.getRow(7).height = 25;
+    ws.getRow(8).height = 25;
+
+    // --------------------------------
+    // LOCATION INFORMATION
+    // --------------------------------
+
+    const locationRows = [
+        ["Location (Floor/Room)", "Devices", "Detail"],
+        ["ทางเข้าโครงการ", "Drop Out Fuse", "From MEA"]
+    ];
+
+    locationRows.forEach((data, index) => {
+        const row = 10 + index;
+        data.forEach((value, i) => {
+            ws.getCell(row, i + 1).value = value;
+        });
+        styleRange(row, 1, 3, index === 0 ? "D9D9D9" : null);
+    });
+
+    ws.mergeCells("C10:E10");
+    ws.mergeCells("C11:E11");
+
+    // --------------------------------
+    // IR INFORMATION
+    // --------------------------------
+
+    const irData = [
+        ["IR Information", "Value"],
+        ["Date of Creation", "24-Jun-26"],
+        ["Object Information", "Value"],
+        ["Emissivity", 0.65],
+        ["Ambient Temp (°C)", 34.0],
+        ["Position", "Value"],
+        ["P1", 47.4],
+        ["P2", 47.1],
+        ["P3", 47.6]
+    ];
+
+    irData.forEach((data, index) => {
+        const row = 13 + index;
+
+        ws.getCell(row, 1).value = data[0];
+        ws.getCell(row, 2).value = data[1];
+
+        styleRange(
+            row, 1, 2,
+            [0, 2, 5].includes(index) ? "D9D9D9" : null
+        );
+    });
+
+    // --------------------------------
+    // TEMPERATURE ANALYSIS TITLE
+    // --------------------------------
+
+    mergedTitle(
+        23,
+        "Thermographic Survey Suggested Actions Based on Temperature Rise"
+    );
+
+    ws.getCell("A23").font = {
+        name: "Arial",
+        size: 10,
+        underline: true
+    };
+
+    // --------------------------------
+    // SIMILAR COMPONENT TEMPERATURE
+    // --------------------------------
+
+    mergedTitle(
+        24,
+        "Temperature Difference (ΔT) Between Similar Components under Similar Loading"
+    );
+
+    const header1 = [
+        "Position",
+        "Temp (°C)",
+        "Normal",
+        "Abnormal",
+        "Recommended Action"
+    ];
+
+    header1.forEach((v, i) => {
+        ws.getCell(25, i + 1).value = v;
+    });
+
+    styleRange(25, 1, 5, "D9D9D9");
+
+    const similarData = [
+        ["P1 - P2", 0.3, "✓", "", "Normal"],
+        ["P2 - P3", 0.5, "✓", "", "Normal"],
+        ["P3 - P1", 0.2, "✓", "", "Normal"]
+    ];
+
+    similarData.forEach((data, index) => {
+        const row = 26 + index;
+
+        data.forEach((v, i) => {
+            ws.getCell(row, i + 1).value = v;
+        });
+
+        styleRange(row, 1, 5);
+
+        fill(ws.getCell(row, 5), "00E600");
+    });
+
+    // --------------------------------
+    // AMBIENT TEMPERATURE
+    // --------------------------------
+
+    mergedTitle(
+        30,
+        "Temperature Difference (ΔT) Between Component and Ambient Air Temperature"
+    );
+
+    header1.forEach((v, i) => {
+        ws.getCell(31, i + 1).value = v;
+    });
+
+    styleRange(31, 1, 5, "D9D9D9");
+
+    const ambientData = [
+        ["P1 - Amb.", 13.4, "✓", "",
+         "Indicates probable deficiency; repairs as time permits"],
+        ["P2 - Amb.", 13.1, "✓", "",
+         "Indicates probable deficiency; repairs as time permits"],
+        ["P3 - Amb.", 13.6, "✓", "",
+         "Indicates probable deficiency; repairs as time permits"]
+    ];
+
+    ambientData.forEach((data, index) => {
+        const row = 32 + index;
+
+        data.forEach((v, i) => {
+            ws.getCell(row, i + 1).value = v;
+        });
+
+        styleRange(row, 1, 5);
+        fill(ws.getCell(row, 5), "00B0E8");
+    });
+
+    // --------------------------------
+    // REMARK
+    // --------------------------------
+
+    ws.mergeCells("A35:E35");
+    ws.getCell("A35").value =
+        "Remark : ดูตามคำแนะนำหน้าที่ 4";
+
+    ws.getCell("A35").font = {
+        name: "Arial",
+        size: 9,
+        bold: true
+    };
+
+    // --------------------------------
+    // GENERAL FORMATTING
+    // --------------------------------
+
+    ws.eachRow((row) => {
+        row.eachCell((cell) => {
+            cell.font = {
+                name: "Arial",
+                size: 9,
+                ...cell.font
+            };
+
+            cell.alignment = {
+                vertical: "middle",
+                wrapText: true,
+                ...cell.alignment
+            };
+        });
+    });
+
+    // --------------------------------
+    // VERIFY ONE SHEET ONLY
+    // --------------------------------
+
+    if (wb.worksheets.length !== 1) {
+        throw new Error("Workbook ต้องมีเพียง 1 Sheet");
+    }
+
+    // --------------------------------
+    // EXPORT FILE
+    // --------------------------------
+
+    const buffer = await wb.xlsx.writeBuffer();
+
+    const blob = new Blob(
+        [buffer],
+        {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "Thermography_One_Sheet.xlsx";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+    document.getElementById("status").innerText =
+        "สร้างไฟล์ Excel สำเร็จ: 1 Sheet";
+
+} catch (error) {
+
+    document.getElementById("status").innerText =
+        "เกิดข้อผิดพลาด: " + error.message;
+
+    console.error(error);
+}
+
+}
+
+</script>
+</body>
+</html>
