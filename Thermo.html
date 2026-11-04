@@ -3,93 +3,230 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Thermography to Excel</title>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    padding: 25px;
-}
-button {
-    background: #1685c5;
-    color: white;
-    padding: 12px 25px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-}
-</style>
+<title>Thermography Excel Report</title>
+<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
 </head>
 <body>
-
-<h2>Infrared Thermography Report</h2>
-<p>Honda Ramkhamhaeng</p>
-
+<h2>Thermography Report to Excel</h2>
 <button onclick="exportExcel()">Download Excel</button>
 
 <script>
-function exportExcel() {
+async function exportExcel() {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Thermography Report");
 
-const wb = XLSX.utils.book_new();
+    // A4 Portrait - One Page
+    ws.pageSetup = {
+        paperSize: 9,
+        orientation: "portrait",
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 1,
+        margins: {
+            left: 0.25, right: 0.25,
+            top: 0.3, bottom: 0.3,
+            header: 0.1, footer: 0.1
+        }
+    };
 
-// Sheet 1: General Information
-const info = [
-["Infrared Thermography Report for Honda Ramkhamhaeng"],
-["Thermal Image No.1"],
-[],
-["Location (Floor/Room)", "Devices", "Detail"],
-["ทางเข้าโครงการ", "Drop Out Fuse", "From MEA"],
-[],
-["IR Information", "Value"],
-["Date of Creation", "24-Jun-26"],
-[],
-["Object Information", "Value"],
-["Emissivity", 0.65],
-["Ambient Temp (°C)", 34.0],
-[],
-["Position", "Temperature (°C)"],
-["P1", 47.4],
-["P2", 47.1],
-["P3", 47.6]
-];
+    ws.columns = [
+        { width: 19 },
+        { width: 15 },
+        { width: 14 },
+        { width: 14 },
+        { width: 38 }
+    ];
 
-const ws1 = XLSX.utils.aoa_to_sheet(info);
-ws1["!cols"] = [
-{wch:32},{wch:25},{wch:25}
-];
-XLSX.utils.book_append_sheet(wb, ws1, "IR Information");
+    function merge(row, c1, c2, value) {
+        ws.mergeCells(row,c1,row,c2);
+        ws.getCell(row,c1).value = value;
+    }
 
-// Sheet 2: Temperature Difference
-const temp = [
-["Thermographic Survey Suggested Actions Based on Temperature Rise"],
-[],
-["Temperature Difference Between Similar Components under Similar Loading"],
-["Position", "Temp (°C)", "Normal", "Abnormal", "Recommended Action"],
-["P1 - P2", 0.3, "✓", "", "Normal"],
-["P2 - P3", 0.5, "✓", "", "Normal"],
-["P3 - P1", 0.2, "✓", "", "Normal"],
-[],
-["Temperature Difference Between Component and Ambient Air Temperature"],
-["Position", "Temp (°C)", "Normal", "Abnormal", "Recommended Action"],
-["P1 - Amb.", 13.4, "✓", "", "Indicates probable deficiency; repairs as time permits"],
-["P2 - Amb.", 13.1, "✓", "", "Indicates probable deficiency; repairs as time permits"],
-["P3 - Amb.", 13.6, "✓", "", "Indicates probable deficiency; repairs as time permits"]
-];
+    function styleRow(row, color = "D9D9D9") {
+        ws.getRow(row).eachCell({includeEmpty:true}, cell => {
+            cell.fill = {
+                type:"pattern",
+                pattern:"solid",
+                fgColor:{argb:"FF"+color}
+            };
+            cell.alignment = {
+                horizontal:"center",
+                vertical:"middle",
+                wrapText:true
+            };
+            cell.border = {
+                top:{style:"thin"},
+                bottom:{style:"thin"},
+                left:{style:"thin"},
+                right:{style:"thin"}
+            };
+        });
+    }
 
-const ws2 = XLSX.utils.aoa_to_sheet(temp);
-ws2["!cols"] = [
-{wch:20},{wch:15},{wch:12},{wch:12},{wch:65}
-];
-XLSX.utils.book_append_sheet(wb, ws2, "Temperature Analysis");
+    // HEADER
+    merge(1,1,5,
+      "Infrared Thermography Report for Honda Ramkhamhaeng");
+    ws.getCell("A1").font = {bold:true,size:12};
+    ws.getRow(1).height = 25;
 
-// Export Excel
-XLSX.writeFile(
-    wb,
-    "Thermography_Honda_Ramkhamhaeng.xlsx"
-);
+    merge(2,1,5,"Thermal Image No.1");
+    ws.getCell("A2").font = {bold:true,size:11};
+
+    // IMAGE AREA
+    merge(3,1,2,"Thermal Image");
+    merge(3,4,5,"Visible Image");
+    styleRow(3);
+
+    // Image placeholders
+    merge(4,1,2,"");
+    merge(4,4,5,"");
+    ws.getRow(4).height = 90;
+
+    // LOCATION
+    ws.addRow([]);
+    ws.addRow([
+      "Location (Floor/Room)",
+      "Devices",
+      "Detail"
+    ]);
+    styleRow(6);
+
+    ws.addRow([
+      "ทางเข้าโครงการ",
+      "Drop Out Fuse",
+      "From MEA"
+    ]);
+
+    // IR INFORMATION
+    ws.addRow([]);
+    merge(9,1,2,"IR Information");
+    ws.getCell("A9").value = "IR Information";
+    ws.getCell("B9").value = "Value";
+    styleRow(9);
+
+    [
+      ["Date of Creation","24-Jun-26"],
+      ["Object Information","Value"],
+      ["Emissivity",0.65],
+      ["Ambient Temp (°C)",34.0],
+      ["Position","Value"],
+      ["P1",47.4],
+      ["P2",47.1],
+      ["P3",47.6]
+    ].forEach(r => ws.addRow(r));
+
+    for(let r=9;r<=17;r++) {
+      ws.getRow(r).eachCell({includeEmpty:true},cell=>{
+        cell.border = {
+          top:{style:"thin"},
+          bottom:{style:"thin"},
+          left:{style:"thin"},
+          right:{style:"thin"}
+        };
+        cell.alignment = {horizontal:"center"};
+      });
+    }
+
+    // TEMPERATURE ANALYSIS
+    ws.addRow([]);
+    merge(19,1,5,
+      "Thermographic Survey Suggested Actions Based on Temperature Rise");
+    ws.getCell("A19").alignment = {horizontal:"center"};
+    ws.getCell("A19").font = {bold:true,underline:true};
+
+    merge(20,1,5,
+      "Temperature Difference (ΔT) Between Similar Components under Similar Loading");
+    ws.getCell("A20").alignment = {horizontal:"center",wrapText:true};
+    styleRow(20);
+
+    ws.addRow([
+      "Position","Temp (°C)","Normal","Abnormal","Recommended Action"
+    ]);
+    styleRow(21);
+
+    [
+      ["P1 - P2",0.3,"✓","","Normal"],
+      ["P2 - P3",0.5,"✓","","Normal"],
+      ["P3 - P1",0.2,"✓","","Normal"]
+    ].forEach(r=>ws.addRow(r));
+
+    for(let r=22;r<=24;r++) {
+      ws.getRow(r).eachCell({includeEmpty:true},cell=>{
+        cell.border = {
+          top:{style:"thin"},bottom:{style:"thin"},
+          left:{style:"thin"},right:{style:"thin"}
+        };
+        cell.alignment = {horizontal:"center",wrapText:true};
+      });
+      ws.getCell("E"+r).fill = {
+        type:"pattern",pattern:"solid",
+        fgColor:{argb:"FF00E600"}
+      };
+    }
+
+    // AMBIENT TEMPERATURE
+    merge(26,1,5,
+      "Temperature Difference (ΔT) Between Component and Ambient Air Temperature");
+    ws.getCell("A26").alignment = {horizontal:"center",wrapText:true};
+    styleRow(26);
+
+    ws.addRow([
+      "Position","Temp (°C)","Normal","Abnormal","Recommended Action"
+    ]);
+    styleRow(27);
+
+    [
+      ["P1 - Amb.",13.4,"✓","",
+       "Indicates probable deficiency; repairs as time permits"],
+      ["P2 - Amb.",13.1,"✓","",
+       "Indicates probable deficiency; repairs as time permits"],
+      ["P3 - Amb.",13.6,"✓","",
+       "Indicates probable deficiency; repairs as time permits"]
+    ].forEach(r=>ws.addRow(r));
+
+    for(let r=28;r<=30;r++) {
+      ws.getRow(r).eachCell({includeEmpty:true},cell=>{
+        cell.border = {
+          top:{style:"thin"},bottom:{style:"thin"},
+          left:{style:"thin"},right:{style:"thin"}
+        };
+        cell.alignment = {horizontal:"center",wrapText:true};
+      });
+      ws.getCell("E"+r).fill = {
+        type:"pattern",pattern:"solid",
+        fgColor:{argb:"FF00B0E8"}
+      };
+    }
+
+    ws.addRow([
+      "Remark : ดูตามคำแนะนำหน้าที่ 4"
+    ]);
+
+    // General formatting
+    ws.eachRow(row=>{
+      row.eachCell(cell=>{
+        cell.font = {name:"Arial",size:9};
+        cell.alignment = {
+          vertical:"middle",
+          horizontal:cell.alignment.horizontal || "center",
+          wrapText:true
+        };
+      });
+    });
+
+    // Export
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+        type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Thermography_One_Sheet.xlsx";
+    a.click();
+    URL.revokeObjectURL(url);
 }
 </script>
-
 </body>
 </html>
